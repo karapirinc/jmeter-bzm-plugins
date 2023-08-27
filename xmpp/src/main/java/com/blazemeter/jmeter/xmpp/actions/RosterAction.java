@@ -2,11 +2,13 @@ package com.blazemeter.jmeter.xmpp.actions;
 
 import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterEntry;
 
 import javax.swing.*;
 import java.awt.*;
+
+import static org.jxmpp.jid.impl.JidCreate.bareFrom;
 
 public class RosterAction extends AbstractXMPPAction {
     private static final java.lang.String ENTRY = "roster_entry";
@@ -34,15 +36,15 @@ public class RosterAction extends AbstractXMPPAction {
     @Override
     public SampleResult perform(JMeterXMPPSampler sampler, SampleResult res) throws Exception {
         Action action = Action.valueOf(sampler.getPropertyAsString(ACTION, Action.get_roster.toString()));
-        Roster roster = sampler.getXMPPConnection().getRoster();
+        Roster roster = Roster.getInstanceFor(sampler.getXMPPConnection());
         String entry = sampler.getPropertyAsString(ENTRY);
         res.setSamplerData(action.toString() + ": " + entry);
         if (action == Action.get_roster) {
             res.setResponseData(rosterToString(roster).getBytes());
         } else if (action == Action.add_item) {
-            roster.createEntry(entry, entry, new String[0]);
+            roster.createEntry(bareFrom(entry), entry, new String[0]);
         } else if (action == Action.delete_item) {
-            RosterEntry rosterEntry = roster.getEntry(entry);
+            RosterEntry rosterEntry = roster.getEntry(bareFrom(entry));
             if (rosterEntry != null) {
                 roster.removeEntry(rosterEntry);
             }
@@ -74,7 +76,7 @@ public class RosterAction extends AbstractXMPPAction {
         for (RosterEntry entry : roster.getEntries()) {
             res.append(entry.toString());
             res.append(':');
-            res.append(roster.getPresence(entry.getUser()).toString());
+            res.append(roster.getPresence(entry.getJid()).toString());
             res.append('\n');
         }
         return res.toString();

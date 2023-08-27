@@ -5,24 +5,24 @@ import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class NoOp extends AbstractXMPPAction implements PacketListener {
+public class NoOp extends AbstractXMPPAction implements StanzaListener {
     private static final Logger log = LoggingManager.getLoggerForClass();
-    private Queue<Packet> incomingPackets = new LinkedBlockingQueue<>();
+    private Queue<Stanza> incomingPackets = new LinkedBlockingQueue<>();
 
     @Override
     public String getLabel() {
@@ -37,7 +37,7 @@ public class NoOp extends AbstractXMPPAction implements PacketListener {
     @Override
     public SampleResult perform(JMeterXMPPSampler sampler, SampleResult res) throws Exception {
         long counter = 0;
-        for (Packet packet : incomingPackets) {
+        for (Stanza packet : incomingPackets) {
             incomingPackets.remove(packet);
             SampleResult subRes = new SampleResult();
             subRes.setSuccessful(true);
@@ -83,14 +83,14 @@ public class NoOp extends AbstractXMPPAction implements PacketListener {
     }
 
     @Override
-    public void processPacket(Packet packet) throws SmackException.NotConnectedException {
-        log.debug("Adding pending packet: " + packet.toXML());
-        //log.debug("Extensions: " + Arrays.toString(packet.getExtensions().toArray()));
-        incomingPackets.add(packet);
+    public void processStanza(Stanza stanza) throws SmackException.NotConnectedException {
+        log.debug("Adding pending stanza: " + stanza.toXML());
+        //log.debug("Extensions: " + Arrays.toString(stanza.getExtensions().toArray()));
+        incomingPackets.add(stanza);
     }
 
     @Override
-    public PacketFilter getPacketFilter() {
-        return new OrFilter(PacketTypeFilter.MESSAGE, PacketTypeFilter.PRESENCE, new PacketTypeFilter(IQ.class));
+    public StanzaFilter getStanzaFilter() {
+        return new OrFilter(StanzaTypeFilter.MESSAGE, StanzaTypeFilter.PRESENCE, new StanzaTypeFilter(IQ.class));
     }
 }

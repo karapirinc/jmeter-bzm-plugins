@@ -8,6 +8,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Message;
 import org.junit.Assert;
 import org.junit.Test;
+import org.jxmpp.jid.impl.JidCreate;
 
 
 public class SendMessageTest {
@@ -17,9 +18,9 @@ public class SendMessageTest {
         XMPPConnectionMock connection = new XMPPConnectionMock();
         action.connected(connection);
         Message resp = new Message();
-        resp.setFrom("test@test.com");
+        resp.setFrom(JidCreate.bareFrom("test@test.com"));
         resp.setBody(SendMessage.RESPONSE_MARKER);
-        action.processPacket(resp);
+        action.processStanza(resp);
         JMeterXMPPSampler sampler = new JMeterXMPPSamplerMock();
         sampler.getXMPPConnection().setFromMode(XMPPConnection.FromMode.USER);
         sampler.setProperty(SendMessage.RECIPIENT, "test@test.com");

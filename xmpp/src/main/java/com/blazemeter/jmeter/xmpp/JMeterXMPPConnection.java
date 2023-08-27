@@ -10,9 +10,13 @@ import org.jivesoftware.smack.bosh.BOSHConfiguration;
 import org.jivesoftware.smack.bosh.XMPPBOSHConnection;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -36,13 +40,9 @@ public class JMeterXMPPConnection extends JMeterXMPPConnectionBase {
         for (XMPPConnection conn : connectionRegistry) {
             connectionRegistry.remove(conn);
             if (conn.isConnected()) {
-                try {
-                    log.debug("Disconnecting: " + conn.getConnectionID());
-                    if(conn instanceof AbstractXMPPConnection){
-                        ((AbstractXMPPConnection)conn).disconnect();
-                    }
-                } catch (SmackException.NotConnectedException e) {
-                    log.error("Not connected, nothing to disconnect");
+                log.debug("Disconnecting: " + conn.getStreamId());
+                if (conn instanceof AbstractXMPPConnection) {
+                    ((AbstractXMPPConnection) conn).disconnect();
                 }
             }
         }
@@ -53,7 +53,7 @@ public class JMeterXMPPConnection extends JMeterXMPPConnectionBase {
      *
      * @return XMPPConnection
      */
-    public XMPPConnection getConnection() throws NoSuchAlgorithmException, KeyManagementException, SmackException, InterruptedException {
+    public XMPPConnection getConnection() throws NoSuchAlgorithmException, KeyManagementException, SmackException, InterruptedException, XmppStringprepException, UnknownHostException {
         if (conn == null) {
             String address = getAddress();
             String serv_name = getServiceName();
@@ -64,18 +64,13 @@ public class JMeterXMPPConnection extends JMeterXMPPConnectionBase {
 
             XMPPConnection newConn;
             if (Type.valueOf(getConnectionType()) == Type.BOSH) {
-                BOSHConfiguration conf = new BOSHConfiguration(isBOSHSSL(), address, port, getBOSHURL(), serv_name);
-                conf.setCustomSSLContext(getSSLContext());
-                conf.setRosterLoadedAtLogin(true);
-                conf.setSendPresence(false);
+                BOSHConfiguration conf = BOSHConfiguration.builder()
+                        .setUseHttps(isBOSHSSL()).setHost(address).setPort(port).setFile(getBOSHURL()).setXmppDomain(serv_name)
+                        .setCustomSSLContext(getSSLContext()).setSendPresence(false).build();
                 newConn = new XMPPBOSHConnection(conf);
             } else {
-                ConnectionConfiguration conf = new ConnectionConfiguration(address, port, serv_name);
-                conf.setRosterLoadedAtLogin(true);
-                conf.setSendPresence(false);
+                XMPPTCPConnectionConfiguration conf = XMPPTCPConnectionConfiguration.builder().setHostAddress(InetAddress.getByName(address)).setPort(port).setXmppDomain(serv_name).setSendPresence(false).setCustomSSLContext(getSSLContext()).build();
 
-                // accept all TLS certs
-                conf.setCustomSSLContext(getSSLContext());
                 newConn = new XMPPTCPConnection(conf);
             }
 
@@ -88,18 +83,18 @@ public class JMeterXMPPConnection extends JMeterXMPPConnectionBase {
 
     private void setUpConnection(XMPPConnection newConn) {
         conn = newConn;
-        conn.setPacketReplyTimeout(Integer.parseInt(getPacketReplyTimeout()));
+        conn.setReplyTimeout(Integer.parseInt(getPacketReplyTimeout()));
         conn.setFromMode(getFromMode());
 
         if (log.isDebugEnabled()) {
             conn.addConnectionListener(new Loggers.LogConn(conn));
-            conn.addPacketListener(new Loggers.LogRecv(conn), new AndFilter());
-            conn.addPacketSendingListener(new Loggers.LogSent(conn), new AndFilter());
+            conn.addStanzaListener(new Loggers.LogRecv(conn), new AndFilter());
+            conn.addStanzaSendingListener(new Loggers.LogSent(conn), new AndFilter());
         }
 
         for (AbstractXMPPAction action : actions.values()) {
-            if (action instanceof PacketListener) {
-                conn.addPacketListener((PacketListener) action, action.getPacketFilter());
+            if (action instanceof StanzaListener) {
+                conn.addStanzaListener((StanzaListener) action, action.getStanzaFilter());
             }
             if (action instanceof ConnectionListener) {
                 conn.addConnectionListener((ConnectionListener) action);

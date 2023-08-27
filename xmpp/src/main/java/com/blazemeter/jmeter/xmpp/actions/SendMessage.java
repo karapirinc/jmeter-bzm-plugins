@@ -5,11 +5,11 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jxmpp.util.XmppStringUtils;
 
 import javax.swing.*;
@@ -18,7 +18,9 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class SendMessage extends AbstractXMPPAction implements PacketListener, ConnectionListener {
+import static org.jivesoftware.smack.packet.MessageBuilder.buildMessage;
+
+public class SendMessage extends AbstractXMPPAction implements StanzaListener, ConnectionListener {
     private static final Logger log = LoggingManager.getLoggerForClass();
 
     public static final String RECIPIENT = "msg_w_resp_addressee";
@@ -52,11 +54,12 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
             body += "\r\n" + System.currentTimeMillis() + "@" + NEED_RESPONSE_MARKER;
         }
 
-        Message msg = new Message(recipient);
-        msg.setType(Message.Type.fromString(sampler.getPropertyAsString(TYPE, Message.Type.normal.toString())));
-        msg.addBody("", body);
+        Message msg = buildMessage().to(recipient)
+                .ofType(Message.Type.fromString(sampler.getPropertyAsString(TYPE, Message.Type.normal.toString())))
+                .addBody("", body)
+                .build();
         res.setSamplerData(msg.toXML().toString());
-        sampler.getXMPPConnection().sendPacket(msg);
+        sampler.getXMPPConnection().sendStanza(msg);
         res.setSamplerData(msg.toXML().toString()); // second time to reflect the changes made to packet by conn
 
         if (wait_response) {
@@ -69,11 +72,11 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
         long time = 0;
         do {
             Iterator<Message> packets = responseMessages.iterator();
-            Thread.sleep(conn.getPacketReplyTimeout() / 100); // optimistic
+            Thread.sleep(conn.getReplyTimeout() / 100); // optimistic
             while (packets.hasNext()) {
-                Packet packet = packets.next();
+                Stanza packet = packets.next();
                 Message response = (Message) packet;
-                if (XmppStringUtils.parseBareAddress(response.getFrom()).equals(recipient)) {
+                if (response.getFrom().equals(recipient)) {
                     packets.remove();
                     res.setResponseData(response.toXML().toString().getBytes());
                     if (response.getError() != null) {
@@ -84,10 +87,10 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
                     return res;
                 }
             }
-            time += conn.getPacketReplyTimeout() / 10;
-            Thread.sleep(conn.getPacketReplyTimeout() / 10);
-        } while (time < conn.getPacketReplyTimeout());
-        throw new SmackException.NoResponseException();
+            time += conn.getReplyTimeout() / 10;
+            Thread.sleep(conn.getReplyTimeout() / 10);
+        } while (time < conn.getReplyTimeout());
+        throw SmackException.NoResponseException.newWith(conn,"Message response");
     }
 
     @Override
@@ -135,9 +138,9 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
     }
 
     @Override
-    public void processPacket(Packet packet) throws SmackException.NotConnectedException {
-        if (packet instanceof Message) {
-            Message inMsg = (Message) packet;
+    public void processStanza(Stanza stanza) throws SmackException.NotConnectedException {
+        if (stanza instanceof Message) {
+            Message inMsg = (Message) stanza;
             if (inMsg.getBody() != null) {
                 if (inMsg.getBody().endsWith(NEED_RESPONSE_MARKER)) {
                     if (inMsg.getExtension(NS_DELAYED) == null) {
@@ -159,8 +162,8 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
         outMsg.addBody("", inMsg.getBody() + "\r\n" + System.currentTimeMillis() + "@" + RESPONSE_MARKER);
         log.debug("Responding to message: " + outMsg.toXML());
         try {
-            conn.sendPacket(outMsg);
-        } catch (SmackException e) {
+            conn.sendStanza(outMsg);
+        } catch (SmackException | InterruptedException e) {
             log.error("Failed to send response", e);
         }
     }
@@ -170,10 +173,6 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
         this.conn = connection;
     }
 
-    @Override
-    public void authenticated(XMPPConnection connection) {
-
-    }
 
     @Override
     public void connectionClosed() {
@@ -185,18 +184,4 @@ public class SendMessage extends AbstractXMPPAction implements PacketListener, C
 
     }
 
-    @Override
-    public void reconnectingIn(int seconds) {
-
-    }
-
-    @Override
-    public void reconnectionSuccessful() {
-
-    }
-
-    @Override
-    public void reconnectionFailed(Exception e) {
-
-    }
 }

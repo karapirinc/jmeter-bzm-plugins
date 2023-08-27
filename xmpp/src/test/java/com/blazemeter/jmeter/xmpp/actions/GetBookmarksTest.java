@@ -23,14 +23,20 @@ public class GetBookmarksTest {
             @Override
             public void run() {
                 while (true) {
-                    if (!sampler.conn.getCollectors().isEmpty())
-                        sampler.conn.processPacket(new PrivateDataResult(new Bookmarks()));
+                    //if (!sampler.conn.getCollectors().isEmpty())
+                    try {
+                        sampler.conn.processStanza(new PrivateDataResult(new Bookmarks()));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         };
         thr.start();
-        Thread.sleep(sampler.conn.getPacketReplyTimeout() / 10);
-        obj.perform(sampler, new SampleResult());
+        Thread.sleep(sampler.conn.getReplyTimeout() / 10);
+        obj.perform(sampler, new
+
+                SampleResult());
 
     }
 
@@ -45,24 +51,20 @@ public class GetBookmarksTest {
      */
     private static class PrivateDataResult extends IQ {
 
-        private PrivateData privateData;
+        public static final String NAMESPACE = "jabber:iq:private";
+        public static final String ELEMENT_NAME = "private";
+        private final PrivateData privateData;
 
-        PrivateDataResult(PrivateData privateData) {
+        public PrivateDataResult(PrivateData privateData) {
+            super(ELEMENT_NAME, NAMESPACE);
+            this.setType(Type.get);
             this.privateData = privateData;
         }
 
-        public PrivateData getPrivateData() {
-            return privateData;
-        }
-
-        public String getChildElementXML() {
-            StringBuilder buf = new StringBuilder();
-            buf.append("<query xmlns=\"jabber:iq:private\">");
-            if (privateData != null) {
-                buf.append(privateData.toXML());
-            }
-            buf.append("</query>");
-            return buf.toString();
+        @Override
+        protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
+            xml.append(privateData.toXML());
+            return xml;
         }
     }
 }

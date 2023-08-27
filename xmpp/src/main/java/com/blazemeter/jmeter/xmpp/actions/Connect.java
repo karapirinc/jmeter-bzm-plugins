@@ -18,7 +18,7 @@ public class Connect extends AbstractXMPPAction {
     public SampleResult perform(JMeterXMPPSampler sampler, SampleResult res) throws Exception {
         AbstractXMPPConnection conn = (AbstractXMPPConnection)sampler.getXMPPConnection();
         conn.connect();
-        res.setResponseData(sampler.getXMPPConnection().getConnectionID().getBytes());
+        res.setResponseData(sampler.getXMPPConnection().getStreamId().getBytes());
         return res;
     }
 

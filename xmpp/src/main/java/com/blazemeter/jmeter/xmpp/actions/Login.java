@@ -10,6 +10,7 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jxmpp.jid.parts.Resourcepart;
 
 public class Login extends AbstractXMPPAction {
 
@@ -48,9 +49,9 @@ public class Login extends AbstractXMPPAction {
         res.setSamplerData("Username: " + loginStr + "\nPassword: " + pwdStr + "\nResource: " + resStr);
         AbstractXMPPConnection absConn = (AbstractXMPPConnection) conn;
         if (loginStr.isEmpty()) {
-            absConn.loginAnonymously();
+            absConn.login();
         } else {
-            absConn.login(loginStr, pwdStr, resStr);
+            absConn.login(loginStr, pwdStr, Resourcepart.from(resStr));
         }
         return res;
     }

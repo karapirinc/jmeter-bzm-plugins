@@ -2,15 +2,21 @@ package com.blazemeter.jmeter.xmpp.actions;
 
 import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.packet.Presence;
+import org.jxmpp.jid.BareJid;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.jid.util.JidUtil;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class SendPresence extends AbstractXMPPAction implements PacketListener {
+import static org.jxmpp.jid.impl.JidCreate.*;
+
+public class SendPresence extends AbstractXMPPAction implements StanzaListener {
     public static final String RECIPIENT = "recipient";
     public static final String STATUS_TEXT = "text";
     public static final String TYPE = "type";
@@ -35,7 +41,7 @@ public class SendPresence extends AbstractXMPPAction implements PacketListener {
 
         String to = sampler.getPropertyAsString(RECIPIENT);
         if (!to.isEmpty()) {
-            presence.setTo(to);
+            presence.setTo(bareFrom(to));
         }
 
         String text = sampler.getPropertyAsString(STATUS_TEXT);
@@ -43,7 +49,7 @@ public class SendPresence extends AbstractXMPPAction implements PacketListener {
             presence.setStatus(text);
         }
 
-        sampler.getXMPPConnection().sendPacket(presence);
+        sampler.getXMPPConnection().sendStanza(presence);
         res.setSamplerData(presence.toXML().toString());
         return res;
     }
@@ -97,7 +103,7 @@ public class SendPresence extends AbstractXMPPAction implements PacketListener {
     }
 
     @Override
-    public void processPacket(Packet packet) throws SmackException.NotConnectedException {
+    public void processStanza(Stanza stanza) throws SmackException.NotConnectedException {
         /** TODO: do we need to respond?
          if (packet instanceof Presence) {
          Presence presence = (Presence) packet;

@@ -2,11 +2,11 @@ package com.blazemeter.jmeter.xmpp;
 
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-import org.jivesoftware.smack.*;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.PlainStreamElement;
-
-import java.io.IOException;
+import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.packet.Nonza;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jxmpp.jid.parts.Resourcepart;
 
 public class XMPPConnectionMock extends AbstractXMPPConnection {
     private static final Logger log = LoggingManager.getLoggerForClass();
@@ -15,32 +15,12 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     public boolean isAuthenticated = true;
 
     public XMPPConnectionMock() {
-        super(new ConnectionConfiguration("unitTest"));
+        super(XMPPTCPConnectionConfiguration.builder().setHost("unitTest").build());
     }
 
     @Override
-    public String getUser() {
-        return "test@unitTest";
-    }
-
-    @Override
-    public String getConnectionID() {
-        return "ConnID";
-    }
-
-    @Override
-    public boolean isConnected() {
-        return isConnected;
-    }
-
-    @Override
-    public boolean isAuthenticated() {
-        return isAuthenticated;
-    }
-
-    @Override
-    public boolean isAnonymous() {
-        return false;
+    public void instantShutdown() {
+        log.debug("instantShutdown");
     }
 
     @Override
@@ -49,13 +29,15 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     }
 
     @Override
-    protected void sendPacketInternal(Packet packet) throws SmackException.NotConnectedException {
+    protected void sendStanzaInternal(Stanza packet) {
         log.debug("Emul sending packet: " + packet.toXML());
+
     }
 
     @Override
-    public void send(PlainStreamElement element) throws SmackException.NotConnectedException {
+    public void sendNonza(Nonza element) {
         log.debug("Emul sending packet: " + element.toXML());
+
     }
 
     @Override
@@ -64,17 +46,12 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     }
 
     @Override
-    protected void connectInternal() throws SmackException, IOException, XMPPException {
+    protected void connectInternal() {
         log.debug("Emul connect");
     }
 
     @Override
-    public void login(String username, String password, String resource) throws XMPPException, SmackException, IOException {
-        log.debug("Emul login");
-    }
-
-    @Override
-    public void loginAnonymously() throws XMPPException, SmackException, IOException {
+    protected void loginInternal(String username, String password, Resourcepart resource) {
         log.debug("Emul login");
     }
 
@@ -84,12 +61,8 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     }
 
     @Override
-    public void processPacket(Packet packet) {
-        super.processPacket(packet);
+    public void processStanza(Stanza stanza) throws InterruptedException {
+        super.processStanza(stanza);
     }
 
-
-    public java.util.Collection<PacketCollector> getCollectors() {
-        return collectors;
-    }
 }

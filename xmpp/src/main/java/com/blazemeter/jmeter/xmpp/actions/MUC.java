@@ -2,10 +2,16 @@ package com.blazemeter.jmeter.xmpp.actions;
 
 import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.jid.parts.Resourcepart;
 
 import javax.swing.*;
 import java.awt.*;
+
+import static org.jxmpp.jid.impl.JidCreate.*;
 
 public class MUC extends AbstractXMPPAction {
     private static final java.lang.String ROOM = "muc_room";
@@ -23,8 +29,10 @@ public class MUC extends AbstractXMPPAction {
         String room = sampler.getPropertyAsString(ROOM);
         String nick = sampler.getPropertyAsString(NICKNAME);
         res.setSamplerData("Join Room: " + room + "/" + nick);
-        MultiUserChat muc = new MultiUserChat(sampler.getXMPPConnection(), room);
-        muc.join(nick);
+        XMPPConnection xmppConnection = sampler.getXMPPConnection();
+        MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
+        MultiUserChat muc = mucManager.getMultiUserChat(entityBareFrom(room));
+        muc.join(Resourcepart.from(nick));
         return res;
     }
 

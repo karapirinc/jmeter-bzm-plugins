@@ -9,9 +9,7 @@ import org.apache.log.Logger;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smackx.iqprivate.packet.PrivateData;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -216,26 +214,4 @@ public class JMeterXMPPSamplerTest {
         }
     }
 
-    private static class PrivateDataResult extends IQ {
-
-        private PrivateData privateData;
-
-        PrivateDataResult(PrivateData privateData) {
-            this.privateData = privateData;
-        }
-
-        public PrivateData getPrivateData() {
-            return privateData;
-        }
-
-        public String getChildElementXML() {
-            StringBuilder buf = new StringBuilder();
-            buf.append("<query xmlns=\"jabber:iq:private\">");
-            if (privateData != null) {
-                buf.append(privateData.toXML());
-            }
-            buf.append("</query>");
-            return buf.toString();
-        }
-    }
 }

@@ -17,6 +17,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import static org.jxmpp.jid.impl.JidCreate.entityFullFrom;
+
 public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferListener, ConnectionListener {
     private static final Logger log = LoggingManager.getLoggerForClass();
 
@@ -34,15 +36,15 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
 
     @Override
     public SampleResult perform(JMeterXMPPSampler sampler, SampleResult res) throws Exception {
-        String recipient = sampler.getPropertyAsString(FILE_RECIPIENT);
+        String fileRecipient = sampler.getPropertyAsString(FILE_RECIPIENT);
         String filePath = sampler.getPropertyAsString(FILE_PATH);
 
-        res.setSamplerData("Recipient: " + recipient + "\r\nFile: " + filePath + "\r\n");
+        res.setSamplerData("Recipient: " + fileRecipient + "\r\nFile: " + filePath + "\r\n");
 
-        OutgoingFileTransfer transfer = mgr.createOutgoingFileTransfer(recipient);
+        OutgoingFileTransfer transfer = mgr.createOutgoingFileTransfer(entityFullFrom(fileRecipient));
 
         transfer.sendFile(new File(filePath), filePath);
-        waitForTransfer(transfer, sampler.getXMPPConnection().getPacketReplyTimeout());
+        waitForTransfer(transfer, sampler.getXMPPConnection().getReplyTimeout());
         res.setResponseData(("Bytes sent: " + transfer.getBytesSent()).getBytes());
         return res;
     }
@@ -53,13 +55,13 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
         Thread.sleep(timeout / WAITING_CYCLES / 10); // optimistic
         while (!transfer.isDone()) {
             if (transfer.getStatus().equals(FileTransfer.Status.error)) {
-                throw new SmackException(transfer.getError().toString(), transfer.getException());
+                throw new SmackException.SmackWrappedException(transfer.getError().toString(), transfer.getException());
             } else {
                 log.debug("Status: " + transfer.getStatus() + " " + transfer.getProgress());
             }
             if (transfer.getProgress() <= prevProgress) {
                 if (counter >= WAITING_CYCLES) {
-                    throw new SmackException("File transfer timed out");
+                    throw new SmackException.SmackMessageException("File transfer timed out");
                 }
                 counter++;
                 Thread.sleep(timeout / WAITING_CYCLES);
@@ -70,7 +72,7 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
         }
 
         if (transfer.getProgress() == 0) {
-            throw new SmackException("No data transferred");
+            throw new SmackException.SmackMessageException("No data transferred");
         }
     }
 
@@ -107,17 +109,15 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
     public void fileTransferRequest(FileTransferRequest request) {
         final IncomingFileTransfer transfer = request.accept();
 
-        Thread transferThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    OutputStream os = new NullOutputStream();
-                    InputStream is = transfer.recieveFile();
-                    log.debug("Reading from stream: " + is.available());
-                    IOUtils.copy(is, os);
-                    log.debug("Left in stream: " + is.available());
-                } catch (Exception e) {
-                    log.error("Failed incoming file transfer", e);
-                }
+        Thread transferThread = new Thread(() -> {
+            try {
+                OutputStream os = new NullOutputStream();
+                InputStream is = transfer.receiveFile();
+                log.debug("Reading from stream: " + is.available());
+                IOUtils.copy(is, os);
+                log.debug("Left in stream: " + is.available());
+            } catch (Exception e) {
+                log.error("Failed incoming file transfer", e);
             }
         });
         transferThread.start();
@@ -130,11 +130,6 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
     }
 
     @Override
-    public void authenticated(XMPPConnection connection) {
-
-    }
-
-    @Override
     public void connectionClosed() {
 
     }
@@ -144,18 +139,4 @@ public class SendFileXEP0096 extends AbstractXMPPAction implements FileTransferL
 
     }
 
-    @Override
-    public void reconnectingIn(int seconds) {
-
-    }
-
-    @Override
-    public void reconnectionSuccessful() {
-
-    }
-
-    @Override
-    public void reconnectionFailed(Exception e) {
-
-    }
 }

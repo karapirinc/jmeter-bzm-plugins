@@ -3,7 +3,8 @@ package com.blazemeter.jmeter.xmpp.actions;
 
 import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
+import org.jivesoftware.smack.packet.XmlEnvironment;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +22,23 @@ public class RawXML extends AbstractXMPPAction {
     public SampleResult perform(final JMeterXMPPSampler sampler, SampleResult res) throws Exception {
         final String xml = sampler.getPropertyAsString(XML);
         res.setSamplerData(xml);
-        sampler.getXMPPConnection().sendPacket(new Packet() {
+        sampler.getXMPPConnection().sendStanza(new Stanza() {
+            @Override
+            public String getElementName() {
+                return "TODO";
+            }
+
+            @Override
+            public String toString() {
+                return xml;
+            }
+
+            @Override
+            public CharSequence toXML(XmlEnvironment xmlEnvironment) {
+                //TODO
+                return null;
+            }
+
             @Override
             public CharSequence toXML() {
                 return xml;

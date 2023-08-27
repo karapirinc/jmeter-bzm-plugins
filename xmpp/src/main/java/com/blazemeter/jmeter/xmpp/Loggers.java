@@ -3,15 +3,15 @@ package com.blazemeter.jmeter.xmpp;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Stanza;
 
 public class Loggers {
     private static final Logger log = LoggingManager.getLoggerForClass();
 
-    public static class LogRecv implements PacketListener {
+    public static class LogRecv implements StanzaListener {
         private final XMPPConnection conn;
 
         public LogRecv(XMPPConnection conn) {
@@ -19,17 +19,17 @@ public class Loggers {
         }
 
         @Override
-        public void processPacket(Packet packet) throws SmackException.NotConnectedException {
+        public void processStanza(Stanza stanza) throws SmackException.NotConnectedException {
             try {
-                log.debug("Packet recv [" + conn.getConnectionID() + "]: " + packet.toXML());
+                log.debug("Stanza recv [" + conn.getStreamId() + "]: " + stanza.toXML());
             } catch (IllegalArgumentException e) {
                 log.debug("Failed to log packet", e);
-                log.debug("Packet recv [" + conn.getConnectionID() + "]: " + packet.getError());
+                log.debug("Stanza recv [" + conn.getStreamId() + "]: " + stanza.getError());
             }
         }
     }
 
-    public static class LogSent implements PacketListener {
+    public static class LogSent implements StanzaListener {
         private final XMPPConnection conn;
 
         public LogSent(XMPPConnection conn) {
@@ -37,8 +37,8 @@ public class Loggers {
         }
 
         @Override
-        public void processPacket(Packet packet) throws SmackException.NotConnectedException {
-            log.debug("Packet sent [" + conn.getConnectionID() + "]: " + packet.toXML());
+        public void processStanza(Stanza stanza) throws SmackException.NotConnectedException {
+            log.debug("Stanza sent [" + conn.getStreamId() + "]: " + stanza.toXML());
         }
     }
 
@@ -51,38 +51,18 @@ public class Loggers {
 
         @Override
         public void connected(XMPPConnection connection) {
-            log.debug("Connected: " + connection.getConnectionID());
-        }
-
-        @Override
-        public void authenticated(XMPPConnection connection) {
-            log.debug("Authenticated: " + connection.getConnectionID());
+            log.debug("Connected: " + connection.getStreamId());
         }
 
         @Override
         public void connectionClosed() {
-            log.debug("Connection closed: " + conn.getConnectionID());
+            log.debug("Connection closed: " + conn.getStreamId());
         }
 
         @Override
         public void connectionClosedOnError(Exception e) {
-            log.error("Connection closed with error: " + conn.getConnectionID(), e);
+            log.error("Connection closed with error: " + conn.getStreamId(), e);
         }
 
-        @Override
-        public void reconnectingIn(int seconds) {
-            log.debug("Reconnecting in: " + seconds);
-        }
-
-        @Override
-        public void reconnectionSuccessful() {
-            log.debug("Reconnection successfull");
-        }
-
-        @Override
-        public void reconnectionFailed(Exception e) {
-            log.error("Reconnection failed: ", e);
-
-        }
     }
 }

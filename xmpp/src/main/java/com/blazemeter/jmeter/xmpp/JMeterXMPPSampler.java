@@ -11,7 +11,9 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jxmpp.stringprep.XmppStringprepException;
 
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
@@ -41,7 +43,7 @@ public class JMeterXMPPSampler extends AbstractSampler {
                 throw new RuntimeException("No XMPP Connection available");
             }
 
-            String headers = "Connection ID: " + conn.getConnectionID() + "\r\n";
+            String headers = "Connection ID: " + conn.getStreamId() + "\r\n";
 
             String action = getAction();
             if (!conn.isConnected() && !action.equals(Connect.class.getCanonicalName())) {
@@ -77,7 +79,7 @@ public class JMeterXMPPSampler extends AbstractSampler {
         setProperty(ACTION, value);
     }
 
-    public XMPPConnection getXMPPConnection() throws KeyManagementException, NoSuchAlgorithmException, SmackException, InterruptedException {
+    public XMPPConnection getXMPPConnection() throws KeyManagementException, NoSuchAlgorithmException, SmackException, InterruptedException, UnknownHostException, XmppStringprepException {
         return connConfig.getConnection();
     }
 

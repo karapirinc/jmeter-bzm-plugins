@@ -4,6 +4,7 @@ import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jxmpp.jid.impl.JidCreate;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,9 +27,9 @@ public class ServiceDiscovery extends AbstractXMPPAction {
         ServiceDiscoveryManager discoMgr = ServiceDiscoveryManager.getInstanceFor(sampler.getXMPPConnection());
         IQ info;
         if (Type.valueOf(sampler.getPropertyAsString(TYPE)) == Type.info) {
-            info = discoMgr.discoverInfo(entID);
+            info = discoMgr.discoverInfo(JidCreate.entityFrom(entID));
         } else {
-            info = discoMgr.discoverItems(entID);
+            info = discoMgr.discoverItems(JidCreate.entityFrom(entID));
         }
         res.setResponseData(info.toXML().toString().getBytes());
         return res;

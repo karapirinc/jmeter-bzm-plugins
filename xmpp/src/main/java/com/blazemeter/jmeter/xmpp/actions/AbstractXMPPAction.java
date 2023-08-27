@@ -4,7 +4,7 @@ package com.blazemeter.jmeter.xmpp.actions;
 import com.blazemeter.jmeter.xmpp.JMeterXMPPSampler;
 import org.apache.jmeter.samplers.SampleResult;
 import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +13,7 @@ import java.io.Serializable;
 /**
  * All subclasses of this class will be displayed as actions in XMPP Sampler.
  * You can just create JAR with such subclasses and put it into lib/ext of JMeter and they will become available.
- * If class will implement PacketListener, it will be added as listener to XMPPConnection.
+ * If class will implement StanzaListener, it will be added as listener to XMPPConnection.
  * Every JMeterXMPPConnection has its own set of available actions
  */
 public abstract class AbstractXMPPAction implements Cloneable, Serializable {
@@ -75,7 +75,9 @@ public abstract class AbstractXMPPAction implements Cloneable, Serializable {
      */
     public abstract void setGuiFieldsFromSampler(JMeterXMPPSampler sampler);
 
-    public PacketFilter getPacketFilter() {
+    public StanzaFilter getStanzaFilter() {
         return new AndFilter();
     }
+
+
 }
