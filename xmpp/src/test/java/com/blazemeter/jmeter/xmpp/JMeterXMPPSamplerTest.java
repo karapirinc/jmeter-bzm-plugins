@@ -9,10 +9,13 @@ import org.apache.log.Logger;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.jxmpp.stringprep.XmppStringprepException;
 
+import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -42,8 +45,9 @@ public class JMeterXMPPSamplerTest {
     public void testSample1() throws Exception {
         JMeterXMPPSampler obj = getjMeterXMPPSampler();
 
-        obj.setProperty(Login.LOGIN, "user1");
+        obj.setProperty(Login.LOGIN, "user1@test");
         obj.setProperty(Login.PASSWORD, "1");
+        obj.setProperty(Login.RESOURCE, "resource1");
         doAction(obj, Login.class);
     }
 
@@ -51,7 +55,6 @@ public class JMeterXMPPSamplerTest {
     public void sendMessageFrom() throws Exception {
         JMeterXMPPSampler obj = getjMeterXMPPSampler();
         obj.getXMPPConnection().setFromMode(XMPPConnection.FromMode.USER);
-
         obj.setProperty(SendMessage.RECIPIENT, "user2@undera-desktop");
         obj.setProperty(SendMessage.BODY, "body");
         SampleResult res = doAction(obj, SendMessage.class);
@@ -170,7 +173,7 @@ public class JMeterXMPPSamplerTest {
         doAction(obj, Disconnect.class);
     }
 
-    private JMeterXMPPSampler getjMeterXMPPSampler() {
+    private JMeterXMPPSampler getjMeterXMPPSampler() throws IOException, SmackException, XMPPException, InterruptedException {
         JMeterXMPPSampler obj = new JMeterXMPPSampler();
         JMeterXMPPConnection conn = new JMeterXMPPConnectionMock();
         fillActionClasses(conn.getActions());
@@ -208,8 +211,12 @@ public class JMeterXMPPSamplerTest {
     private class JMeterXMPPConnectionMock extends JMeterXMPPConnection {
         public XMPPConnectionMock conn = new XMPPConnectionMock();
 
+        private JMeterXMPPConnectionMock() throws IOException, SmackException, XMPPException, InterruptedException {
+            conn.connect();
+        }
+
         @Override
-        public XMPPConnection getConnection() throws NoSuchAlgorithmException, KeyManagementException, SmackException {
+        public XMPPConnection getConnection() {
             return conn;
         }
     }

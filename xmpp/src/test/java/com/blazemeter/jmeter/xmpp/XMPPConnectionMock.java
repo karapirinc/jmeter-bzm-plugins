@@ -3,19 +3,29 @@ package com.blazemeter.jmeter.xmpp;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.c2s.ModularXmppClientToServerConnectionConfiguration;
 import org.jivesoftware.smack.packet.Nonza;
 import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jxmpp.jid.impl.JidCreate;
 import org.jxmpp.jid.parts.Resourcepart;
+import org.jxmpp.stringprep.XmppStringprepException;
+
+import java.io.IOException;
 
 public class XMPPConnectionMock extends AbstractXMPPConnection {
     private static final Logger log = LoggingManager.getLoggerForClass();
 
-    public boolean isConnected = true;
-    public boolean isAuthenticated = true;
-
-    public XMPPConnectionMock() {
-        super(XMPPTCPConnectionConfiguration.builder().setHost("unitTest").build());
+    public XMPPConnectionMock() throws XmppStringprepException, SmackException, XMPPException, InterruptedException {
+        super(ModularXmppClientToServerConnectionConfiguration.builder()
+                .setXmppDomain("unit@Test")
+                .setHost("unit@Test")
+                .setResource(Resourcepart.from("test@unitTest"))
+                .setUsernameAndPassword("test@unitTest", "pass")
+                .setSecurityMode(ConnectionConfiguration.SecurityMode.disabled)
+                .build());
     }
 
     @Override
@@ -31,7 +41,6 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     @Override
     protected void sendStanzaInternal(Stanza packet) {
         log.debug("Emul sending packet: " + packet.toXML());
-
     }
 
     @Override
@@ -46,13 +55,18 @@ public class XMPPConnectionMock extends AbstractXMPPConnection {
     }
 
     @Override
-    protected void connectInternal() {
-        log.debug("Emul connect");
+    protected void connectInternal() throws SmackException, IOException, XMPPException, InterruptedException {
+        log.debug("Connecting");
+        this.connected = true;
+        this.user= JidCreate.entityFullFrom("test@unitTest/testResource");
     }
 
+
     @Override
-    protected void loginInternal(String username, String password, Resourcepart resource) {
+    protected void loginInternal(String username, String password, Resourcepart resource) throws XmppStringprepException {
         log.debug("Emul login");
+        this.user= JidCreate.entityFullFrom(username+"/"+resource.toString());
+        this.authenticated=true;
     }
 
     @Override

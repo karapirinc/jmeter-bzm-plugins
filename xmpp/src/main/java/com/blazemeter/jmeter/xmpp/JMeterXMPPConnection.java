@@ -53,7 +53,7 @@ public class JMeterXMPPConnection extends JMeterXMPPConnectionBase {
      *
      * @return XMPPConnection
      */
-    public XMPPConnection getConnection() throws NoSuchAlgorithmException, KeyManagementException, SmackException, InterruptedException, XmppStringprepException, UnknownHostException {
+    public XMPPConnection getConnection() throws NoSuchAlgorithmException, KeyManagementException, InterruptedException, XmppStringprepException, UnknownHostException {
         if (conn == null) {
             String address = getAddress();
             String serv_name = getServiceName();

@@ -56,7 +56,7 @@ public class SendMessage extends AbstractXMPPAction implements StanzaListener, C
 
         Message msg = buildMessage().to(recipient)
                 .ofType(Message.Type.fromString(sampler.getPropertyAsString(TYPE, Message.Type.normal.toString())))
-                .addBody("", body)
+                .setBody(body)
                 .build();
         res.setSamplerData(msg.toXML().toString());
         sampler.getXMPPConnection().sendStanza(msg);
