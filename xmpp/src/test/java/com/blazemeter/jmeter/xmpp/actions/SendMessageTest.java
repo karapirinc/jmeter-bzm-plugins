@@ -14,17 +14,18 @@ import org.jxmpp.jid.impl.JidCreate;
 public class SendMessageTest {
     @Test
     public void perform() throws Exception {
-        SendMessage action = new SendMessage();
-        XMPPConnectionMock connection = new XMPPConnectionMock();
-        action.connected(connection);
-        Message resp = new Message();
-        resp.setFrom(JidCreate.bareFrom("test@test.com"));
-        resp.setBody(SendMessage.RESPONSE_MARKER);
-        action.processStanza(resp);
         JMeterXMPPSampler sampler = new JMeterXMPPSamplerMock();
         sampler.getXMPPConnection().setFromMode(XMPPConnection.FromMode.USER);
         sampler.setProperty(SendMessage.RECIPIENT, "test@test.com");
         sampler.setProperty(SendMessage.WAIT_RESPONSE, true);
+
+        SendMessage action = new SendMessage();
+        action.connected(sampler.getXMPPConnection());
+
+        Message resp = new Message();
+        resp.setFrom(JidCreate.bareFrom("test@test.com"));
+        resp.setBody(SendMessage.RESPONSE_MARKER);
+        action.processStanza(resp);
         SampleResult res = new SampleResult();
         action.perform(sampler, res);
         Assert.assertTrue(res.getResponseDataAsString().contains(SendMessage.RESPONSE_MARKER));

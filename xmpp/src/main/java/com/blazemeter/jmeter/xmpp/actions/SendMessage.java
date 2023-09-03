@@ -49,8 +49,8 @@ public class SendMessage extends AbstractXMPPAction implements StanzaListener, C
         // sending message
         String recipient = sampler.getPropertyAsString(RECIPIENT);
         String body = sampler.getPropertyAsString(BODY);
-        boolean wait_response = sampler.getPropertyAsBoolean(WAIT_RESPONSE);
-        if (wait_response) {
+        boolean waitResponse = sampler.getPropertyAsBoolean(WAIT_RESPONSE);
+        if (waitResponse) {
             body += "\r\n" + System.currentTimeMillis() + "@" + NEED_RESPONSE_MARKER;
         }
 
@@ -62,7 +62,7 @@ public class SendMessage extends AbstractXMPPAction implements StanzaListener, C
         sampler.getXMPPConnection().sendStanza(msg);
         res.setSamplerData(msg.toXML().toString()); // second time to reflect the changes made to packet by conn
 
-        if (wait_response) {
+        if (waitResponse) {
             return waitResponse(res, recipient);
         }
         return res;
